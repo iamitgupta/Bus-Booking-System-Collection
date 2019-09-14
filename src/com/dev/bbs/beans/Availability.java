@@ -1,6 +1,6 @@
 package com.dev.bbs.beans;
 
-import java.sql.Date;
+import java.util.Date;
 
 public class Availability {
 	private int availId;

@@ -10,6 +10,7 @@ public class Ticket {
 	private Date journeyDate;
 	private int numofseats;
 	private Date bookingDatetime;
+	private double ticketPrice ;
 
 	public int getBookingId() {
 		return bookingId;
@@ -59,10 +60,20 @@ public class Ticket {
 		this.bookingDatetime = bookingDatetime;
 	}
 
+	public double getTicketPrice() {
+		return ticketPrice;
+	}
+
+	public void setTicketPrice(double ticketPrice) {
+		this.ticketPrice = ticketPrice;
+	}
+
 	@Override
 	public String toString() {
 		return "Ticket [bookingId=" + bookingId + ", busId=" + busId + ", userId=" + userId + ", journeyDate="
-				+ journeyDate + ", numofseats=" + numofseats + ", bookingDatetime=" + bookingDatetime + "]";
+				+ journeyDate + ", numofseats=" + numofseats + ", bookingDatetime=" + bookingDatetime + ", ticketPrice="
+				+ ticketPrice + "]";
 	}
 
+	
 }

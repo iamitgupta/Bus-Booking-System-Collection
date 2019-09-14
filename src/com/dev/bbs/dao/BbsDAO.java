@@ -1,5 +1,6 @@
 package com.dev.bbs.dao;
 
+import java.util.Date;
 import java.util.List;
 
 import com.dev.bbs.beans.Admin;
@@ -48,11 +49,11 @@ public interface BbsDAO {
 
 	public List<Integer> getAllTicket(int userId);
 
-	public List<Availability> checkAvailability(String source, String destination, java.sql.Date date);
+	public List<Availability> checkAvailability(String source, String destination, Date date);
 
-	public Integer checkAvailability(int busId, java.sql.Date date);
+	public Integer checkAvailability(int busId, Date date);
 	
-	public List<Ticket> getTicketByBus(int busId,java.sql.Date date);
+	public List<Ticket> getTicketByBus(int busId,Date date);
 	
 	public Boolean setBusAvailability(Availability availability);
 

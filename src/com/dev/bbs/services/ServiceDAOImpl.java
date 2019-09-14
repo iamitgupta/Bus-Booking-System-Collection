@@ -1,7 +1,9 @@
 package com.dev.bbs.services;
 
-import java.sql.Date;
+import java.util.Date;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.dev.bbs.beans.Admin;
 import com.dev.bbs.beans.Availability;
@@ -14,6 +16,7 @@ import com.dev.bbs.dao.BbsDAOImpl;
 
 public class ServiceDAOImpl implements ServiceDAO {
 	BbsDAO dao = new BbsDAOImpl();
+	static int uniqueId=1;
 
 	@Override
 	public Boolean createUser(User user) {
@@ -130,5 +133,49 @@ public class ServiceDAOImpl implements ServiceDAO {
 	public Boolean setBusAvailability(Availability availability) {
 		return dao.setBusAvailability(availability);
 	}
+	
+	public Integer validateId(String id) 
+	{
+		Pattern pat = Pattern.compile("\\d+");
+		Matcher mat = pat.matcher(id);
+		if(mat.matches()){
+			return Integer.parseInt(id);
+		}else{
+			return null;
+		}
 
+	}
+	@Override
+	public String validateEmail(String email) {
+		Pattern	pat = Pattern.compile("\\w+.\\w+\\@\\w+\\.\\w+"); 
+		Matcher	mat = pat.matcher(email);
+		if(mat.matches()){
+			return email;
+		}else{
+			return null;
+		}
+
+	}
+	@Override
+	public Long valdateContact(String contact) {
+		Pattern pat = Pattern.compile("\\d+");
+		Matcher mat = pat.matcher(contact);
+		if(mat.matches() && contact.length()==10){
+			return Long.parseLong(contact);
+		}else{
+			return null;
+		}
+	}
+
+
+
+	@Override
+	public Integer getUniqueKey() {
+		return uniqueId++;
+		
+		
+		
+	}
+
+	
 }

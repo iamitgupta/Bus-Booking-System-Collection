@@ -1,13 +1,8 @@
 package com.dev.bbs.dao;
 
-import java.sql.Connection;
-import java.sql.Date;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Statement;
-import java.sql.Timestamp;
+import java.util.Date;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import com.dev.bbs.beans.Admin;
@@ -16,113 +11,60 @@ import com.dev.bbs.beans.Bus;
 import com.dev.bbs.beans.Feedback;
 import com.dev.bbs.beans.Ticket;
 import com.dev.bbs.beans.User;
+import com.dev.bbs.repo.Repository;
+import com.dev.bbs.services.ServiceDAO;
+import com.dev.bbs.services.ServiceDAOImpl;
 
 public class BbsDAOImpl implements BbsDAO {
 
-	public BbsDAOImpl() {
-		try {
-			// load the driver
-			Class.forName("com.mysql.jdbc.Driver");
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		}
-	}
+	Repository repo=new Repository();
 
-	// db query
-	String url = "jdbc:mysql://127.0.0.1:3306/busbookingsystem_db?user=root&password=root";
+	private HashMap<Integer,User> usersInfo=repo.usersInfo;
+	private HashMap<Integer,Bus> busInfo=repo.busInfo;
+	private HashMap<Integer,Ticket> bookingInfo=repo.bookingInfo; 
+	private HashMap<Integer,Availability> availabilityInfo=repo.availabilityInfo;
+	private HashMap<Integer,Feedback> suggestionInfo=repo.suggestionInfo;
+	private HashMap<Integer,Admin> adminInfo=repo.adminInfo;
 
 	@Override
 	public Boolean createUser(User user) {
-		// Insert user into userTable if user doesn't exist
-		String query = "INSERT INTO users_info VALUES (?,?,?,?,?)";
-		User tempuser = searchUser(user.getUserId());
-		try (Connection conn = DriverManager.getConnection(url);
-				PreparedStatement pstmt = conn.prepareStatement(query);) {
-			if (tempuser == null) {
-				pstmt.setInt(1, user.getUserId());
-				pstmt.setString(2, user.getUsername());
-				pstmt.setString(3, user.getEmail());
-				pstmt.setString(4, user.getPassword());
-				pstmt.setLong(5, user.getContact());
-				pstmt.executeUpdate();
-				return true;
-			} else {
-
-				return false;
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
+		if(usersInfo.containsKey(user.getUserId())){
+			return false;
+		}else{
+			usersInfo.put(user.getUserId(), user);
+			return true;
 		}
-		return false;
 	}
 
 	@Override
 	public Boolean updateUser(User user) {
-		// Update user's data
-		String query = "UPDATE users_info SET username=?,email=?,password=?,contact=? WHERE user_id=?";
-		User tempuser = searchUser(user.getUserId());
-		try (Connection conn = DriverManager.getConnection(url);
-				PreparedStatement pstmt = conn.prepareStatement(query);) {
-			if (tempuser != null) {
-				pstmt.setString(1, user.getUsername());
-				pstmt.setString(2, user.getEmail());
-				pstmt.setString(3, user.getPassword());
-				pstmt.setLong(4, user.getContact());
-				pstmt.setInt(5, user.getUserId());
-				pstmt.executeUpdate();
-				return true;
-			} else {
-				return false;
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
+		if(usersInfo.containsKey(user.getUserId())){
+			usersInfo.put(user.getUserId(), user);
+			return true;
+		}else{
+			return false;
 		}
-		return false;
 	}
 
 	@Override
 	public Boolean deleteUser(int userId) {
 		// delete user if already exists
-		String query = "DELETE FROM users_info WHERE user_id=?";
-		User user = searchUser(userId);
-		try (Connection conn = DriverManager.getConnection(url);
-				PreparedStatement pstmt = conn.prepareStatement(query);) {
-			if (user != null) {
-				pstmt.setInt(1, userId);
-				pstmt.executeUpdate();
-				return true;
-			} else {
-				return false;
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
+		if(usersInfo.containsKey(userId)){
+			usersInfo.remove(userId);
+			return true;
+		}else{
+			return false;
 		}
-		return false;
 	}
 
 	@Override
 	public User loginUser(int userId, String password) {
 		// return user detail
-		String query = "SELECT * FROM users_info where user_id='" + userId + "' and password='" + password + "'";
-
-		try (Connection conn = DriverManager.getConnection(url);
-				PreparedStatement pstmt = conn.prepareStatement(query);
-				ResultSet rs = pstmt.executeQuery(query)) {
-
-			User user = new User();
-
-			if (rs.next()) {
-				user.setUserId(rs.getInt("user_id"));
-				user.setUsername(rs.getString("username"));
-				user.setEmail(rs.getString("email"));
-				user.setPassword(rs.getString("password"));
-				user.setContact(rs.getLong("contact"));
+		if(usersInfo.containsKey(userId)){
+			User user=usersInfo.get(userId);
+			if(user.getPassword().equals(password)){
 				return user;
-
 			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
 		return null;
 	}
@@ -130,397 +72,226 @@ public class BbsDAOImpl implements BbsDAO {
 	@Override
 	public User searchUser(int userId) {
 		// return user detail
-		String query = "SELECT  * FROM users_info where user_id=" + userId;
-		User user = null;
-
-		try (Connection conn = DriverManager.getConnection(url);
-				Statement stmt = conn.createStatement();
-				ResultSet rs = stmt.executeQuery(query)) {
-
-			if (rs.next()) {
-				user = new User();
-				user.setUserId(rs.getInt("user_id"));
-				user.setUsername(rs.getString("username"));
-				user.setEmail(rs.getString("email"));
-				user.setPassword(rs.getString("password"));
-				user.setContact(rs.getLong("contact"));
-				return user;
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
+		if(usersInfo.containsKey(userId)){
+			return usersInfo.get(userId);
 		}
-		return user;
+		return null;
 	}
 
 	@Override
 	public Boolean createBus(Bus bus) {
-		// Insert user into userTable if user doesn't exist
-		String query = "INSERT INTO bus_info VALUES (?,?,?,?,?,?,?)";
-		Bus tempbus = searchBus(bus.getBusId());
-		try (Connection conn = DriverManager.getConnection(url);
-				PreparedStatement pstmt = conn.prepareStatement(query);) {
-			if (tempbus != null) {
-				return false;
-			} else {
-				pstmt.setInt(1, bus.getBusId());
-				pstmt.setString(2, bus.getBusname());
-				pstmt.setString(3, bus.getSource());
-				pstmt.setString(4, bus.getDestination());
-				pstmt.setString(5, bus.getBusType());
-				pstmt.setInt(6, bus.getTotalSeats());
-				pstmt.setDouble(7, bus.getPrice());
-
-				pstmt.executeUpdate();
-				return true;
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
+		if(busInfo.containsKey(bus.getBusId())){
+			return false;
+		}else{
+			busInfo.put(bus.getBusId(), bus);
+			return true;
 		}
-		return false;
 	}
 
 	@Override
 	public Boolean updateBus(Bus bus) {
-		// Insert user into userTable if user doesn't exist
-		String query = "UPDATE bus_info SET busname=?,source=?,destination=?,"
-				+ "bus_type=?,total_seats=?,price=? WHERE bus_id=?";
-		Bus tempbus = searchBus(bus.getBusId());
-		try (Connection conn = DriverManager.getConnection(url);
-				PreparedStatement pstmt = conn.prepareStatement(query);) {
-			if (tempbus != null) {
-				pstmt.setString(1, bus.getBusname());
-				pstmt.setString(2, bus.getSource());
-				pstmt.setString(3, bus.getDestination());
-				pstmt.setString(4, bus.getBusType());
-				pstmt.setInt(5, bus.getTotalSeats());
-				pstmt.setDouble(6, bus.getPrice());
-				pstmt.setInt(7, bus.getBusId());
-
-				pstmt.executeUpdate();
-				return true;
-			} else {
-				return false;
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
+		if(busInfo.containsKey(bus.getBusId())){
+			busInfo.put(bus.getBusId(), bus);
+			return true;
 		}
-		return false;
+		else{
+			return false;
+		}
 	}
 
 	@Override
 	public Bus searchBus(int busId) {
 		// return Bus detail
-		String query = "SELECT  * FROM bus_info where bus_id=" + busId;
-		Bus bus = null;
-
-		try (Connection conn = DriverManager.getConnection(url);
-				Statement stmt = conn.createStatement();
-				ResultSet rs = stmt.executeQuery(query)) {
-
-			if (rs.next()) {
-				bus = new Bus();
-				bus.setBusId(rs.getInt("bus_id"));
-				bus.setBusname(rs.getString("busname"));
-				bus.setSource(rs.getString("source"));
-				bus.setDestination(rs.getString("destination"));
-				bus.setBusType(rs.getString("bus_type"));
-				bus.setTotalSeats(rs.getInt("total_seats"));
-				bus.setPrice(rs.getDouble("price"));
-				return bus;
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
+		if(busInfo.containsKey(busId)){
+			return busInfo.get(busId);
 		}
-		return bus;
+		else{
+			return null;
+		}
 	}
 
 	@Override
 	public Boolean deletebus(int busId) {
 		// delete bus if already exists
-		String query = "DELETE FROM bus_info WHERE bus_id=?";
-		Bus bus = searchBus(busId);
-		try (Connection conn = DriverManager.getConnection(url);
-				PreparedStatement pstmt = conn.prepareStatement(query);) {
-			if (bus != null) {
-				pstmt.setInt(1, busId);
-				pstmt.executeUpdate();
-				return true;
-			} else {
-				return false;
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
+		if(busInfo.containsKey(busId)){
+			busInfo.remove(busId);
+			return true;
 		}
-		return false;
+		else{
+			return false;
+		}
 	}
 
 	@Override
 	public Admin adminLogin(int adminId, String password) {
 		// admin login
-		String query = "SELECT * FROM admin_info where admin_id=" + adminId + " and password='" + password + "'";
-		Admin admin=null;
-		try (Connection conn = DriverManager.getConnection(url);
-				Statement stmt = conn.createStatement();
-				ResultSet rs = stmt.executeQuery(query)) {
-			if (rs.next()) {
-				admin=new Admin();
-				admin.setAdminId(rs.getInt("admin_id"));
-				admin.setPassword(rs.getString("password"));
-				admin.setName(rs.getString("name"));
-				admin.setEmail(rs.getString("email"));
-				admin.setContact(rs.getLong("contact"));
-				return admin;
-			} else {
-				return admin;
+		Admin tempAdmin=null;
+		if(adminInfo.containsKey(adminId)){
+			Admin admin=adminInfo.get(adminId);
+			if(admin.getPassword().equals(password)) {
+				tempAdmin= admin;
 			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
-		return admin;
+		return tempAdmin;
 	}
 
 	@Override
 	public Ticket bookTicket(Ticket ticket) {
-		String query = "INSERT INTO booking_info (bus_id,user_id,journey_date,numofseats,booking_datetime)"
-				+ " VALUES (?,?,?,?,?)";
-		String availQuery = "UPDATE  availability SET avail_seats=? WHERE avail_date=? and bus_id=?";
-		int totalAvailSeats = checkAvailability(ticket.getBusId(), (java.sql.Date) ticket.getJourneyDate());
+		//getbooking id
+		ServiceDAO service=new  ServiceDAOImpl();
 
-		try (Connection conn = DriverManager.getConnection(url);
-				PreparedStatement pstmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
-				PreparedStatement availpstmt = conn.prepareStatement(availQuery);) {
-			if (ticket.getNumofseats() <= totalAvailSeats) {
+		int bookingId=service.getUniqueKey();
+		ticket.setBookingId(bookingId);
 
-				//get timestam
-				ticket.setBookingDatetime(new java.sql.Timestamp(new java.util.Date().getTime()));
-				pstmt.setInt(1, ticket.getBusId());
-				pstmt.setInt(2, ticket.getUserId());
-				pstmt.setDate(3, (java.sql.Date) ticket.getJourneyDate());
-				pstmt.setInt(4, ticket.getNumofseats());
-				pstmt.setTimestamp(5, (Timestamp) ticket.getBookingDatetime());
-				int tic = pstmt.executeUpdate();
-				if (tic > -1) {
-					// to decrement number of seats from availability table
-					availpstmt.setInt(1, totalAvailSeats - ticket.getNumofseats());
-					availpstmt.setDate(2, (java.sql.Date) ticket.getJourneyDate());
-					availpstmt.setInt(3, ticket.getBusId());
-					availpstmt.executeUpdate();
+		//get timestamp
+		ticket.setBookingDatetime(new java.sql.Timestamp(new java.util.Date().getTime()));
 
-					ResultSet rs = pstmt.getGeneratedKeys();
-					rs.next();
-					ticket.setBookingId(rs.getInt(1));
-					return ticket;
-
+		Availability availability = null;
+		Integer availSeats=checkAvailability(ticket.getBusId(), (Date) ticket.getJourneyDate());
+		if (ticket.getNumofseats() <= availSeats) {
+			if(bookingInfo.put(ticket.getBookingId(), ticket)!=null){
+				//reduce number of booked seats from availabiity
+				for(Integer availId:availabilityInfo.keySet() ){
+					availability=availabilityInfo.get(availId);
+					if(availability.getBusId()==ticket.getBusId() && 
+							availability.getAvailDate().equals(ticket.getJourneyDate()))
+					{
+						availability.setAvailSeats(availability.getAvailSeats() - ticket.getNumofseats());
+						availabilityInfo.put(availability.getAvailId(), availability);
+					}
 				}
-			} else {
-				return null;
-
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return null;
+			return ticket;
+		}else 
+			return null;
 	}
 
 	@Override
 	public Boolean cancelTicket(int bookingId, int userId) {
 		// cancel if already booked and add num of seats to availability column
-		String query = "DELETE FROM booking_info WHERE booking_id=? and user_id=?";
-		String availQuery = "UPDATE  availability SET avail_seats=? WHERE avail_date=? and bus_id=?";
-		Ticket ticket = getTicket(bookingId);
-		System.out.println(ticket);
-
-		int totalAvailSeats = checkAvailability(ticket.getBusId(), (java.sql.Date) ticket.getJourneyDate());
-
-		try (Connection conn = DriverManager.getConnection(url);
-				PreparedStatement pstmt = conn.prepareStatement(query);
-				PreparedStatement availpstmt = conn.prepareStatement(availQuery);) {
-			if (ticket != null) {
-				pstmt.setInt(1, bookingId);
-				pstmt.setInt(2, userId);
-				pstmt.executeUpdate();
-
-				availpstmt.setInt(1, ticket.getNumofseats() + totalAvailSeats);
-				availpstmt.setDate(2, (java.sql.Date) ticket.getJourneyDate());
-				availpstmt.setInt(3, ticket.getBusId());
-				availpstmt.executeUpdate();
-				return true;
+		Boolean res=false;
+		if(bookingInfo.containsKey(bookingId)){
+			Ticket ticket=bookingInfo.get(bookingId);
+			//cancel the ticket
+			bookingInfo.remove(bookingId);
+			//inc avail seats in availabilityInfo
+			Availability availability = null;
+			for(Integer availId:availabilityInfo.keySet() ){
+				availability=availabilityInfo.get(availId);
+				if(availability.getBusId()==ticket.getBusId() && 
+						availability.getAvailDate().equals(ticket.getJourneyDate()))
+				{
+					availability.setAvailSeats(availability.getAvailSeats() + ticket.getNumofseats());
+					availabilityInfo.put(availability.getAvailId(), availability);
+					res=true;
+				}
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
-		return false;
+		return res;
 	}
 
 	@Override
 	public Ticket getTicket(int bookingId) {
 		// return Ticket detail
-		String query = "SELECT  * FROM booking_info where booking_id=" + bookingId;
-
-		try (Connection conn = DriverManager.getConnection(url);
-				Statement stmt = conn.createStatement();
-				ResultSet rs = stmt.executeQuery(query)) {
-
-			if (rs.next()) {
-
-				Ticket ticket = new Ticket();
-				ticket.setBookingId(rs.getInt("booking_id"));
-				ticket.setBusId(rs.getInt("bus_id"));
-				ticket.setUserId(rs.getInt("user_id"));
-				ticket.setJourneyDate(rs.getDate("journey_date"));
-				ticket.setNumofseats(rs.getInt("numofseats"));
-				ticket.setBookingDatetime(rs.getTimestamp("booking_datetime"));
-				return ticket;
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
+		Ticket ticket=null;
+		if(bookingInfo.containsKey(bookingId)){
+			return bookingInfo.get(bookingId);
+		}else{
+			return ticket;
 		}
-		return null;
 	}
 
 	@Override
-	public List<Availability> checkAvailability(String source, String destination, java.sql.Date date) {
-		String query = "SELECT bus_id from bus_info where source='" + source + "'" + " and destination='" + destination
-				+ "'";
-
+	public List<Availability> checkAvailability(String source, String destination,Date date) {
 		List<Availability> availList = new ArrayList<Availability>();
 		Availability availability = null;
-		try (Connection conn = DriverManager.getConnection(url);
-				Statement stmt = conn.createStatement();
-				ResultSet rs = stmt.executeQuery(query)) {
-			while (rs.next()) {
-				availability = new Availability();
-				availability.setBusId(rs.getInt("bus_id"));
-				availability.setAvailSeats(checkAvailability(rs.getInt("bus_id"), date));
+		Bus bus=null;
+		for(Integer availId:availabilityInfo.keySet() ){
+			availability=availabilityInfo.get(availId);
+			bus=searchBus(availability.getBusId());
+			if(bus.getSource().equals(source) &&
+					bus.getDestination().equals(destination) && 
+					availability.getAvailDate().equals(date)){
 				availList.add(availability);
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
+
 		}
 		return availList;
 	}
 
 	@Override
-	public Integer checkAvailability(int busId, java.sql.Date date) {
-		String query = "SELECT avail_seats  FROM availability where bus_id=" + busId + " and avail_date='" + date + "'";
+	public Integer checkAvailability(int busId, Date date) {
 		int seats = 0;
-		try (Connection conn = DriverManager.getConnection(url);
-				Statement stmt = conn.createStatement();
-				ResultSet rs = stmt.executeQuery(query)) {
-			if (rs.next()) {
-				seats = rs.getInt("avail_seats");
-				return seats;
-			} else {
-				return seats;
+		for(Integer availId: availabilityInfo.keySet()){
+			Availability avail=availabilityInfo.get(availId);
+			if(busId==avail.getBusId() && date.equals(avail.getAvailDate())){
+				seats=avail.getAvailSeats();
+
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
+
 		}
 		return seats;
 	}
 
 	@Override
 	public List<Integer> getAllTicket(int userId) {
-		String query = "SELECT  * FROM booking_info where user_id=" + userId;
 		List<Integer> ticketAl = new ArrayList<>();
-		try (Connection conn = DriverManager.getConnection(url);
-				Statement stmt = conn.createStatement();
-				ResultSet rs = stmt.executeQuery(query)) {
-			while (rs.next()) {
-				ticketAl.add(rs.getInt("booking_id"));
+		for(Integer bookingId : bookingInfo.keySet()){
+			Ticket ticket=bookingInfo.get(bookingId);
+			if(ticket.getUserId()==userId){
+				ticketAl.add(bookingId);
 			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
 		return ticketAl;
 	}
 
 	@Override
 	public Boolean writeFeedback(Feedback feed) {
-		String query = "INSERT INTO suggestion (user_id,feedback) VALUES (?,?)";
-		try (Connection conn = DriverManager.getConnection(url);
-				PreparedStatement pstmt = conn.prepareStatement(query);) {
-			pstmt.setInt(1, feed.getUserId());
-			pstmt.setString(2, feed.getFeedback());
-			int res = pstmt.executeUpdate();
-			if (res > -1)
-				return true;
-
-		} catch (Exception e) {
-			e.printStackTrace();
+		ServiceDAO service=new  ServiceDAOImpl();
+		int feedbackId=service.getUniqueKey();
+		if(feed!=null){
+			suggestionInfo.put(feedbackId, feed);
+			return true;
+		}else{
+			return false;
 		}
-		return false;
+
 	}
 
 	@Override
 	public List<Feedback> viewFeedbac() {
-		String query = "select * from suggestion";
 		List<Feedback> feedList = new ArrayList<>();
-		Feedback feed = null;
-		try (Connection conn = DriverManager.getConnection(url);
-				Statement stmt = conn.createStatement();
-				ResultSet rs = stmt.executeQuery(query);) {
-			while (rs.next()) {
-				feed = new Feedback();
-				feed.setSuggId(rs.getInt("sugg_id"));
-				feed.setUserId(rs.getInt("user_id"));
-				feed.setFeedback(rs.getString("feedback"));
 
-				feedList.add(feed);
-
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
+		for(Integer feedBackId : suggestionInfo.keySet()){
+			feedList.add(suggestionInfo.get(feedBackId));
 		}
+
 		return feedList;
 
 	}
 
 	@Override
 	public List<Ticket> getTicketByBus(int busId, Date date) {
-		String query = "SELECT  * FROM booking_info where bus_id="+busId+" and journey_date='"+date+"'";
 		List<Ticket> ticketAl = new ArrayList<>();
 		Ticket ticket=null;
-		try (Connection conn = DriverManager.getConnection(url);
-				Statement stmt = conn.createStatement();
-				ResultSet rs = stmt.executeQuery(query)) {
-			while (rs.next()) {
-				ticket=new Ticket();
-				ticket.setBookingId(rs.getInt("booking_id"));
-				ticket.setUserId(rs.getInt("user_id"));
-				ticket.setBusId(rs.getInt("bus_id"));
-				ticket.setJourneyDate(rs.getDate("journey_date"));
-				ticket.setNumofseats(rs.getInt("numofseats"));
-				ticket.setBookingDatetime(rs.getTimestamp("booking_datetime"));
+		for(Integer bookingId : bookingInfo.keySet()){
+			ticket=bookingInfo.get(bookingId);
+			if(ticket.getBusId()==busId && ticket.getJourneyDate().equals(date)){
 				ticketAl.add(ticket);
 			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
 		return ticketAl;
 	}
 
 	@Override
-	public Boolean setBusAvailability(Availability availability) {
-		String query = "INSERT INTO availability (avail_date,avail_seats,bus_id) VALUES (?,?,?)";
-		try (Connection conn = DriverManager.getConnection(url);
-			PreparedStatement pstmt = conn.prepareStatement(query)) {
-			pstmt.setDate(1, availability.getAvailDate());
-			pstmt.setInt(2, availability.getAvailSeats());
-			pstmt.setInt(3, availability.getBusId());
-			int res = pstmt.executeUpdate();
-			if (res > -1)
-				return true;
-
-		} catch (Exception e) {
-			e.printStackTrace();
+	public Boolean setBusAvailability(Availability avail) {
+		//get avail id
+		ServiceDAO service=new  ServiceDAOImpl();
+		if(avail.getAvailId()==0){
+			avail.setAvailId(service.getUniqueKey());
+		}
+		if(availabilityInfo.put(avail.getAvailId(), avail)!=null){
+			return true;
 		}
 		return false;
 	}
